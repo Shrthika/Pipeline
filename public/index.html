@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelligent Media Pipeline Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+  <div class="max-w-6xl mx-auto p-6 space-y-8">
+    <!-- Header -->
+    <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">EngiPro Media Pipeline</h1>
+        <p class="text-slate-400 text-sm mt-1">Asynchronous Heuristic Analysis & Fraud Detection Suite</p>
+      </div>
+      <button onclick="fetchAnalytics()" class="bg-slate-800 hover:bg-slate-700 text-sm py-2 px-4 rounded-lg font-medium transition">Refresh Stats</button>
+    </header>
+    <section class="grid grid-cols-1 sm:grid-cols-4 gap-4" id="analytics-grid">
+      <div class="bg-slate-800/50 border border-slate-800 p-6 rounded-xl">
+        <p class="text-slate-400 text-xs uppercase font-semibold tracking-wider">Total Tasks</p>
+        <p class="text-3xl font-bold mt-2 text-blue-400" id="stat-total">0</p>
+      </div>
+      <div class="bg-slate-800/50 border border-slate-800 p-6 rounded-xl">
+        <p class="text-slate-400 text-xs uppercase font-semibold tracking-wider">Completed</p>
+        <p class="text-3xl font-bold mt-2 text-emerald-400" id="stat-completed">0</p>
+      </div>
+      <div class="bg-slate-800/50 border border-slate-800 p-6 rounded-xl">
+        <p class="text-slate-400 text-xs uppercase font-semibold tracking-wider">Processing / Pending</p>
+        <p class="text-3xl font-bold mt-2 text-amber-400" id="stat-pending">0</p>
+      </div>
+      <div class="bg-slate-800/50 border border-slate-800 p-6 rounded-xl">
+        <p class="text-slate-400 text-xs uppercase font-semibold tracking-wider">Failed</p>
+        <p class="text-3xl font-bold mt-2 text-rose-400" id="stat-failed">0</p>
+      </div>
+    </section>
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <section class="bg-slate-800/40 border border-slate-800 p-6 rounded-2xl h-fit space-y-4">
+        <h2 class="text-xl font-bold">Upload Image File</h2>
+        <form id="uploadForm" class="space-y-4">
+          <div class="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-xl p-6 text-center cursor-pointer transition relative">
+            <input type="file" id="imageInput" name="image" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
+            <p class="text-slate-300 text-sm font-medium">Click to choose or drop image here</p>
+            <p class="text-slate-500 text-xs mt-1">Supports JPEG, PNG up to 10MB</p>
+          </div>
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-3 px-4 rounded-xl transition">Submit to Pipeline</button>
+        </form>
+        <div id="uploadStatus" class="hidden text-sm p-3 bg-slate-800 rounded-lg text-slate-300"></div>
+      </section>
+      <section class="lg:grid-cols-1 lg:col-span-2 bg-slate-800/40 border border-slate-800 p-6 rounded-2xl min-h-[350px] space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+          <h2 class="text-xl font-bold">Pipeline Asset Inspector</h2>
+          <span id="badge-status" class="hidden text-xs font-bold px-2.5 py-1 rounded-full uppercase"></span>
+        </div>
+        <div id="inspector-placeholder" class="text-slate-500 text-center py-20">
+          Upload an image on the left to see the live heuristic verification report.
+        </div>
+        <div id="inspector-results" class="hidden space-y-6">
+          <div>
+            <div class="flex justify-between text-sm font-medium mb-1">
+              <span>Asset Integrity Confidence Score</span>
+              <span id="score-text" class="font-bold">0%</span>
+            </div>
+            <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
+              <div id="score-bar" class="h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div class="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center">
+              <span class="text-slate-400">Blur Check:</span>
+              <span id="metric-blur" class="font-semibold"></span>
+            </div>
+            <div class="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center">
+              <span class="text-slate-400">Luminance Exposure:</span>
+              <span id="metric-brightness" class="font-semibold"></span>
+            </div>
+            <div class="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center">
+              <span class="text-slate-400">Aspect Ratio Check (Screenshot):</span>
+              <span id="metric-screenshot" class="font-semibold"></span>
+            </div>
+            <div class="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center">
+              <span class="text-slate-400">MD5 Fingerprint (Duplicate):</span>
+              <span id="metric-duplicate" class="font-semibold"></span>
+            </div>
+            <div class="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center">
+              <span class="text-slate-400">EXIF Metadata Check (Edited):</span>
+              <span id="metric-edited" class="font-semibold"></span>
+            </div>
+            <div class="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center">
+              <span class="text-slate-400">Indian License Format (Regex):</span>
+              <span id="metric-plate" class="font-semibold"></span>
+            </div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-2">
+            <h3 class="text-xs uppercase font-bold text-slate-400 tracking-wider">Raw Extracted Text Buffer</h3>
+            <pre id="metric-ocr" class="text-xs text-slate-300 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto"></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const form = document.getElementById('uploadForm');
+    const statusDiv = document.getElementById('uploadStatus');
+    async function fetchAnalytics() {
+      try {
+        const res = await fetch('/api/analytics');
+        const data = await res.json();
+        document.getElementById('stat-total').innerText = data.totalTasks || 0;
+        document.getElementById('stat-completed').innerText = data.statusBreakdown.completed || 0;
+        document.getElementById('stat-failed').innerText = data.statusBreakdown.failed || 0;
+        
+        const pendingCount = (data.statusBreakdown.pending || 0) + (data.statusBreakdown.processing || 0);
+        document.getElementById('stat-pending').innerText = pendingCount;
+      } catch (err) {
+        console.error("Analytics fetch issue:", err);
+      }
+    }
+    function startPolling(taskId) {
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/tasks/${taskId}`);
+          const data = await res.json();
+          const badge = document.getElementById('badge-status');
+          badge.className = "text-xs font-bold px-2.5 py-1 rounded-full uppercase inline-block";
+          badge.innerText = data.status;
+          if (data.status === 'completed') badge.classList.add('bg-emerald-500/20', 'text-emerald-400');
+          if (data.status === 'processing') badge.classList.add('bg-amber-500/20', 'text-amber-400');
+          if (data.status === 'failed') badge.classList.add('bg-rose-500/20', 'text-rose-400');
+          badge.classList.remove('hidden');
+          if (data.status === 'completed') {
+            clearInterval(interval);
+            displayResults(data.analysisResults);
+            fetchAnalytics();
+          } else if (data.status === 'failed') {
+            clearInterval(interval);
+            document.getElementById('inspector-placeholder').innerText = `Task Processing Error: ${data.failureReason}`;
+            fetchAnalytics();
+          }
+        } catch (err) {
+          clearInterval(interval);
+        }
+      }, 1500);
+    }
+    function displayResults(results) {
+      document.getElementById('inspector-placeholder').classList.add('hidden');
+      document.getElementById('inspector-results').classList.remove('hidden');
+      const percentage = Math.round(results.confidenceScore * 100);
+      document.getElementById('score-text').innerText = `${percentage}%`;
+      const bar = document.getElementById('score-bar');
+      bar.style.width = `${percentage}%`;
+      if (percentage >= 70) bar.className = "h-full bg-emerald-500 transition-all duration-500";
+      else if (percentage >= 40) bar.className = "h-full bg-amber-500 transition-all duration-500";
+      else bar.className = "h-full bg-rose-500 transition-all duration-500";
+      const formatBool = (val, badIfTrue = true) => val 
+        ? `<span class="${badIfTrue ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}">YES</span>` 
+        : `<span class="${badIfTrue ? 'text-emerald-400' : 'text-rose-400'}">NO</span>`;
+      document.getElementById('metric-blur').innerHTML = formatBool(results.blurDetected);
+      document.getElementById('metric-screenshot').innerHTML = formatBool(results.isScreenshot);
+      document.getElementById('metric-duplicate').innerHTML = formatBool(results.isDuplicate);
+      document.getElementById('metric-edited').innerHTML = formatBool(results.isPhotoOfPhotoOrEdited);
+      document.getElementById('metric-plate').innerHTML = formatBool(results.isValidVehiclePlate, false);
+      document.getElementById('metric-brightness').innerText = results.brightnessLevel.toUpperCase();
+      document.getElementById('metric-ocr').innerText = results.extractedText || "[No character strings detected]";
+    }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusDiv.classList.remove('hidden');
+      statusDiv.innerText = "Uploading image...";
+      const formData = new FormData(form);
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        statusDiv.innerText = `Uploaded successfully. Tracking Task ID: ${data.taskId}`;
+        document.getElementById('inspector-placeholder').innerText = "Task is queued. Waiting for background execution loops...";
+        document.getElementById('inspector-results').classList.add('hidden');
+        startPolling(data.taskId);
+      } catch (err) {
+        statusDiv.innerText = "Upload interface dropped connection network errors.";
+      }
+    });
+    fetchAnalytics();
+  </script>
+</body>
+</html>
