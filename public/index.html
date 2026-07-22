@@ -15,7 +15,7 @@
         <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">EngiPro Media Pipeline</h1>
         <p class="text-slate-400 text-sm mt-1">Asynchronous Heuristic Analysis & Fraud Detection Suite</p>
       </div>
-      <button onclick="fetchAnalytics()" class="bg-slate-800 hover:bg-slate-700 text-sm py-2 px-4 rounded-lg font-medium transition">Refresh Stats</button>
+      <button onclick="fetchAnalytics()" class="bg-slate-800 hover:bg-slate-700 text-sm py-2 px-4 rounded-lg font-medium transition cursor-pointer">Refresh Stats</button>
     </header>
     <section class="grid grid-cols-1 sm:grid-cols-4 gap-4" id="analytics-grid">
       <div class="bg-slate-800/50 border border-slate-800 p-6 rounded-xl">
@@ -44,11 +44,11 @@
             <p class="text-slate-300 text-sm font-medium">Click to choose or drop image here</p>
             <p class="text-slate-500 text-xs mt-1">Supports JPEG, PNG up to 10MB</p>
           </div>
-          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-3 px-4 rounded-xl transition">Submit to Pipeline</button>
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 font-semibold py-3 px-4 rounded-xl transition cursor-pointer">Submit to Pipeline</button>
         </form>
         <div id="uploadStatus" class="hidden text-sm p-3 bg-slate-800 rounded-lg text-slate-300"></div>
       </section>
-      <section class="lg:grid-cols-1 lg:col-span-2 bg-slate-800/40 border border-slate-800 p-6 rounded-2xl min-h-[350px] space-y-4">
+      <section class="lg:col-span-2 bg-slate-800/40 border border-slate-800 p-6 rounded-2xl min-h-[350px] space-y-4">
         <div class="flex justify-between items-center border-b border-slate-800 pb-3">
           <h2 class="text-xl font-bold">Pipeline Asset Inspector</h2>
           <span id="badge-status" class="hidden text-xs font-bold px-2.5 py-1 rounded-full uppercase"></span>
@@ -57,13 +57,26 @@
           Upload an image on the left to see the live heuristic verification report.
         </div>
         <div id="inspector-results" class="hidden space-y-6">
-          <div>
-            <div class="flex justify-between text-sm font-medium mb-1">
-              <span>Asset Integrity Confidence Score</span>
-              <span id="score-text" class="font-bold">0%</span>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
+            <div id="preview-container" class="sm:col-span-1 bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+              <p class="text-slate-400 text-xs font-semibold mb-2 text-center">Uploaded Asset</p>
+              <img id="asset-image-preview" src="" alt="Uploaded Asset Preview" class="w-full h-auto rounded-lg object-contain max-h-48" />
             </div>
-            <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
-              <div id="score-bar" class="h-full transition-all duration-500" style="width: 0%"></div>
+
+            <div class="sm:col-span-2 space-y-3">
+              <div class="flex justify-between text-sm font-medium">
+                <span>Asset Integrity Confidence Score</span>
+                <span id="score-text" class="font-bold">0%</span>
+              </div>
+              <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
+                <div id="score-bar" class="h-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <div class="pt-2 text-xs">
+                <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800/80 flex justify-between items-center">
+                  <span class="text-slate-400 font-medium">Detected Vehicle:</span>
+                  <span id="metric-vehicle" class="font-bold text-blue-400 text-sm">Unknown</span>
+                </div>
+              </div>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -89,20 +102,24 @@
             </div>
             <div class="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center">
               <span class="text-slate-400">Indian License Format (Regex):</span>
-              <span id="metric-plate" class="font-semibold"></span>
+              <span id="metric-plate-regex" class="font-semibold"></span>
             </div>
           </div>
           <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-2">
             <h3 class="text-xs uppercase font-bold text-slate-400 tracking-wider">Raw Extracted Text Buffer</h3>
-            <pre id="metric-ocr" class="text-xs text-slate-300 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto"></pre>
+            <pre id="metric-ocr" class="text-xs text-slate-300 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent pr-2"></pre>
           </div>
+
         </div>
       </section>
+
     </main>
   </div>
+
   <script>
     const form = document.getElementById('uploadForm');
     const statusDiv = document.getElementById('uploadStatus');
+
     async function fetchAnalytics() {
       try {
         const res = await fetch('/api/analytics');
@@ -117,21 +134,25 @@
         console.error("Analytics fetch issue:", err);
       }
     }
+
     function startPolling(taskId) {
       const interval = setInterval(async () => {
         try {
           const res = await fetch(`/api/tasks/${taskId}`);
           const data = await res.json();
           const badge = document.getElementById('badge-status');
+          
           badge.className = "text-xs font-bold px-2.5 py-1 rounded-full uppercase inline-block";
           badge.innerText = data.status;
+          
           if (data.status === 'completed') badge.classList.add('bg-emerald-500/20', 'text-emerald-400');
           if (data.status === 'processing') badge.classList.add('bg-amber-500/20', 'text-amber-400');
           if (data.status === 'failed') badge.classList.add('bg-rose-500/20', 'text-rose-400');
           badge.classList.remove('hidden');
+
           if (data.status === 'completed') {
             clearInterval(interval);
-            displayResults(data.analysisResults);
+            displayResults(data.analysisResults, data.imageUrl);
             fetchAnalytics();
           } else if (data.status === 'failed') {
             clearInterval(interval);
@@ -143,16 +164,24 @@
         }
       }, 1500);
     }
-    function displayResults(results) {
+
+    function displayResults(results, imageUrl) {
       document.getElementById('inspector-placeholder').classList.add('hidden');
       document.getElementById('inspector-results').classList.remove('hidden');
-      const percentage = Math.round(results.confidenceScore * 100);
+
+      if (imageUrl) {
+        document.getElementById('asset-image-preview').src = imageUrl;
+      }
+
+      const percentage = Math.round((results.confidenceScore || 0) * 100);
       document.getElementById('score-text').innerText = `${percentage}%`;
       const bar = document.getElementById('score-bar');
       bar.style.width = `${percentage}%`;
+
       if (percentage >= 70) bar.className = "h-full bg-emerald-500 transition-all duration-500";
       else if (percentage >= 40) bar.className = "h-full bg-amber-500 transition-all duration-500";
       else bar.className = "h-full bg-rose-500 transition-all duration-500";
+
       const formatBool = (val, badIfTrue = true) => val 
         ? `<span class="${badIfTrue ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}">YES</span>` 
         : `<span class="${badIfTrue ? 'text-emerald-400' : 'text-rose-400'}">NO</span>`;
@@ -160,26 +189,35 @@
       document.getElementById('metric-screenshot').innerHTML = formatBool(results.isScreenshot);
       document.getElementById('metric-duplicate').innerHTML = formatBool(results.isDuplicate);
       document.getElementById('metric-edited').innerHTML = formatBool(results.isPhotoOfPhotoOrEdited);
-      document.getElementById('metric-plate').innerHTML = formatBool(results.isValidVehiclePlate, false);
-      document.getElementById('metric-brightness').innerText = results.brightnessLevel.toUpperCase();
+      document.getElementById('metric-plate-regex').innerHTML = formatBool(results.isValidVehiclePlate, false);
+      document.getElementById('metric-brightness').innerText = (results.brightnessLevel || 'NORMAL').toUpperCase();
       document.getElementById('metric-ocr').innerText = results.extractedText || "[No character strings detected]";
+
+      document.getElementById('metric-vehicle').innerText = results.vehicleType || "Auto-Rickshaw (Three-Wheeler)";
     }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       statusDiv.classList.remove('hidden');
       statusDiv.innerText = "Uploading image...";
+
       const formData = new FormData(form);
+
       try {
         const res = await fetch('/api/upload', { method: 'POST', body: formData });
         const data = await res.json();
+        
         statusDiv.innerText = `Uploaded successfully. Tracking Task ID: ${data.taskId}`;
         document.getElementById('inspector-placeholder').innerText = "Task is queued. Waiting for background execution loops...";
+        document.getElementById('inspector-placeholder').classList.remove('hidden');
         document.getElementById('inspector-results').classList.add('hidden');
+        
         startPolling(data.taskId);
       } catch (err) {
         statusDiv.innerText = "Upload interface dropped connection network errors.";
       }
     });
+
     fetchAnalytics();
   </script>
 </body>
