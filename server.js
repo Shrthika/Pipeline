@@ -52,8 +52,9 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
     });
 
     await newTask.save();
+    console.log("[Server] Task Saved:", taskId);
     queueEvents.emit('addTask', taskId);
-
+  console.log("[Server] Task Sent To Queue");
     return res.status(202).json({
       message: 'Image uploaded and queued for processing.',
       taskId: taskId,
@@ -116,4 +117,7 @@ app.get('/api/analytics', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log("Queue Engine Ready");
+});
